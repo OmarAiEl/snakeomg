@@ -1,0 +1,7 @@
+const ts=require('typescript'),fs=require('fs');const input=fs.readFileSync('.sites-runtime/practice-source.js','utf8'),ast=ts.createSourceFile('practice.js',input,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS);
+const names=new Set('ArenaGrid pRectDistance pStaticBlocked pSafeSpot pCreateSnake createPracticeWorld pSpawnFood pRebuildFood pRebuildBodies pRadius pApplyPower pPushBlock pPuzzle pUpdateRooms pAI pMove pCollisions pLaserOn pLaserProtected'.split(' '));let pieces=[];
+for(const node of ast.statements){if(node.name&&names.has(node.name.text))pieces.push(node.getText(ast));if(ts.isVariableStatement(node)&&node.declarationList.declarations.some(d=>['PRACTICE_POWERS','P_NAMES','pDistance'].includes(d.name.getText(ast))))pieces.push(node.getText(ast))}
+let source=pieces.join('\n');source=source.replace('for(let i=1;i<=44;i++)','for(let i=1;i<=8;i++)').replaceAll('3300','1400').replace('i<72;i++','i<30;i++');
+source=source.replace('if(s.id){s.aiClock','if(s.bot){s.aiClock').replace('s.targetAngle=w.input.angle;s.boost=w.input.boost','s.targetAngle=s.input.angle;s.boost=s.input.boost');
+source=source.replace('if(!s.id)w.input.angle=s.angle;','');
+fs.writeFileSync('worker/arena-engine.ts',`// @ts-nocheck\n// Online arena uses the same movement, food, puzzles and collision rules as practice.\nconst palette=['#b6f560','#59b8ff','#fa6474','#939a9e','#262b30','#ffa653','#bd8aff','#f4f5e9'];\nconst prefs={color:palette[0]};const sound=()=>{},pNotice=()=>{},pBurst=()=>{};\n`+source+'\n');

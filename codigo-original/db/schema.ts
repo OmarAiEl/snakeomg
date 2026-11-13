@@ -1,0 +1,7 @@
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+export const users=sqliteTable('users',{id:text('id').primaryKey(),name:text('name').notNull(),nameKey:text('name_key').notNull().unique(),salt:text('salt').notNull(),passwordHash:text('password_hash').notNull(),createdAt:integer('created_at').notNull()});
+export const sessions=sqliteTable('sessions',{tokenHash:text('token_hash').primaryKey(),userId:text('user_id').notNull().references(()=>users.id),expiresAt:integer('expires_at').notNull()});
+export const limits=sqliteTable('auth_limits',{key:text('key').primaryKey(),count:integer('count').notNull(),resetAt:integer('reset_at').notNull()});
+export const progress=sqliteTable('player_progress',{userId:text('user_id').primaryKey().references(()=>users.id),data:text('data').notNull(),revision:integer('revision').notNull(),updatedAt:integer('updated_at').notNull()});
+export const arenaRoom=sqliteTable('arena_room',{id:text('id').primaryKey(),data:text('data').notNull(),updatedAt:integer('updated_at').notNull(),revision:integer('revision').notNull(),lease:text('lease').notNull(),leaseUntil:integer('lease_until').notNull()});
+export const arenaMembers=sqliteTable('arena_members',{userId:text('user_id').primaryKey().references(()=>users.id),clientId:text('client_id').notNull(),name:text('name').notNull(),angle:integer('angle',{mode:'number'}).notNull(),boost:integer('boost').notNull(),seenAt:integer('seen_at').notNull(),respawn:integer('respawn').notNull(),appearance:text('appearance').notNull()});

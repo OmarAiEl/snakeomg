@@ -1,0 +1,10 @@
+import vm from 'node:vm';import fs from 'node:fs';import assert from 'node:assert/strict';
+const source=fs.readFileSync('worker/progress-client.js','utf8');
+const memory=new Map(),status={textContent:''};let fail=false,calls=0;
+const context=vm.createContext({window:{PLAYER_ID:'a',PLAYER_PROGRESS:{color:'#123456',unlocked:8,records:{}},addEventListener(){}},document:{getElementById:()=>status,addEventListener(){}},localStorage:{getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)},setTimeout:()=>1,clearTimeout(){},setInterval(){},fetch:async(url,options)=>{calls++;if(fail)throw Error('Offline');return{ok:true,json:async()=>({progress:JSON.parse(options.body)})}}});
+vm.runInContext('const defaults={color:"#b6f560",unlocked:1,records:{}};'+source,context);
+assert.equal(vm.runInContext('prefs.color',context),'#123456');
+vm.runInContext('prefs.unlocked=9;save()',context);assert.equal(memory.get('snakeomg-v1:a:pending'),'1');await vm.runInContext('flushProgress()',context);assert.equal(memory.get('snakeomg-v1:a:pending'),'0');assert.equal(status.textContent,'');assert.equal(status.hidden,true);
+fail=true;vm.runInContext('prefs.color="#abcdef";save()',context);assert.equal(await vm.runInContext('flushProgress()',context),false);assert.equal(memory.get('snakeomg-v1:a:pending'),'1');fail=false;assert.equal(await vm.runInContext('flushProgress()',context),true);assert.equal(memory.get('snakeomg-v1:a:pending'),'0');assert.equal(JSON.parse(memory.get('snakeomg-v1:a')).color,'#abcdef');
+const html=JSON.parse(fs.readFileSync('worker/game-html.ts','utf8').replace('export const gameHtml=','').trim().replace(/;$/,''));let n=0;for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)){new vm.Script(match[1].replaceAll('__PLAYER_ID_JSON__','"a"').replaceAll('__PLAYER_NAME_JSON__','"Player"').replaceAll('__PLAYER_PROGRESS_JSON__','null'));n++}
+console.log('PASS: client cloud loading, queued save, offline retry, account-scoped cache, and syntax of '+n+' embedded scripts.');
